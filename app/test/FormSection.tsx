@@ -13,6 +13,7 @@ export default function FormSection() {
     customer_sex: "2",
     region: "",
     interest_field: "",
+    has_license: "",
   })
   const [showModal, setShowModal] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -50,6 +51,7 @@ export default function FormSection() {
       customer_sex: form.customer_sex,
       region: form.region,
       interest_field: form.interest_field,
+      has_license: form.has_license,
       category: form.interest_field || "강남미용학원",
     }
 
@@ -69,7 +71,7 @@ export default function FormSection() {
         return
       }
       alert("신청이 완료되었습니다.")
-      setForm({ customer_name: "", customer_birth: "", mobile1: "010", mobile2: "", customer_sex: "2", region: "", interest_field: "" })
+      setForm({ customer_name: "", customer_birth: "", mobile1: "010", mobile2: "", customer_sex: "2", region: "", interest_field: "", has_license: "" })
     } catch {
       alert("네트워크 오류가 발생했습니다.")
     }
@@ -172,18 +174,35 @@ export default function FormSection() {
             </div>
 
             {/* 관심 분야 */}
-            <div className="flex bg-white rounded-full px-5 py-3.5 shadow-sm items-center relative transition-shadow focus-within:ring-2 focus-within:ring-brand/30 sm:col-span-2">
+            <div className="flex bg-white rounded-full px-5 py-3.5 shadow-sm items-center relative transition-shadow focus-within:ring-2 focus-within:ring-brand/30">
               <select
                 value={form.interest_field}
                 onChange={(e) => set("interest_field", e.target.value)}
                 className={`w-full bg-transparent text-[15px] font-medium appearance-none focus:outline-none ${form.interest_field ? 'text-gray-800' : 'text-gray-400'}`}
               >
-                <option value="" disabled hidden>관심 분야 선택 (헤어/피부/메이크업/네일)</option>
+                <option value="" disabled hidden>관심 분야 선택</option>
                 {["헤어","피부관리","메이크업","네일아트","토탈뷰티"].map((f) => (
                   <option key={f} value={f}>{f}</option>
                 ))}
               </select>
               <div className="absolute right-5 pointer-events-none text-gray-400 text-xs">▼</div>
+            </div>
+
+            {/* 자격증 보유 여부 */}
+            <div className="flex bg-white rounded-full px-5 py-3.5 shadow-sm items-center justify-between transition-shadow focus-within:ring-2 focus-within:ring-brand/30">
+              <span className="text-[15px] font-medium text-gray-400">자격증 보유 여부</span>
+              <button
+                type="button"
+                onClick={() => set("has_license", form.has_license === "Y" ? "N" : "Y")}
+                className="flex items-center gap-2 outline-none group shrink-0"
+              >
+                <span className={`text-[14px] font-bold transition-colors w-8 text-right ${form.has_license === "Y" ? "text-brand" : "text-gray-400"}`}>
+                  {form.has_license === "Y" ? "보유" : "없음"}
+                </span>
+                <div className={`relative w-11 h-6 rounded-full transition-colors duration-300 shadow-inner ${form.has_license === "Y" ? "bg-brand" : "bg-gray-200 group-hover:bg-gray-300"}`}>
+                  <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow transition-transform duration-300 ease-out ${form.has_license === "Y" ? "translate-x-5" : "translate-x-0"}`} />
+                </div>
+              </button>
             </div>
 
           </div>
