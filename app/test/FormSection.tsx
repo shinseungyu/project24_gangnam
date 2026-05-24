@@ -1,0 +1,207 @@
+"use client"
+
+import { useState } from "react"
+import PrivacyModal from "./PrivacyModal"
+import { validateForm, parsePhone } from "./validate"
+
+export default function FormSection() {
+  const [form, setForm] = useState({
+    customer_name: "",
+    customer_birth: "",
+    mobile1: "010",
+    mobile2: "",
+    customer_sex: "2",
+    region: "",
+    interest_field: "",
+  })
+  const [showModal, setShowModal] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+
+  const set = (key: string, value: string) =>
+    setForm((p) => ({ ...p, [key]: value }))
+
+  const SPECIAL_CHAR_REG = /[ \{\}\[\]\/.,;:|\)*~`^\-_+┼<>\%\'\"\\\(\=]/i
+  const handleNameChange = (value: string) => {
+    if (SPECIAL_CHAR_REG.test(value)) {
+      alert("특수문자는 입력하실수 없습니다.")
+      set("customer_name", value.slice(0, -1))
+      return
+    }
+    set("customer_name", value)
+  }
+
+  const handleSubmitClick = () => {
+    const error = validateForm({ ...form, privacy: true })
+    if (error) { alert(error); return }
+    if (!form.interest_field) { alert("관심 분야를 선택해 주세요."); return }
+    setShowModal(true)
+  }
+
+  const handleConfirm = async () => {
+    const phoneResult = parsePhone(form.mobile1, form.mobile2)
+    if (typeof phoneResult === "string") { alert(phoneResult); return }
+
+    const payload = {
+      customer_name: form.customer_name,
+      customer_birth: form.customer_birth,
+      mobile1: phoneResult.mobile1,
+      mobile2: phoneResult.mobile2,
+      mobile3: "",
+      customer_sex: form.customer_sex,
+      region: form.region,
+      interest_field: form.interest_field,
+      category: form.interest_field || "강남미용학원",
+    }
+
+    setSubmitted(true)
+    try {
+      const url = process.env.NEXT_PUBLIC_DB_SUBMIT_URL!
+      const key = process.env.NEXT_PUBLIC_DB_API_KEY!
+      const res = await fetch(`${url}?api_key=${key}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        alert(`전송 실패: ${err.error ?? res.status}`)
+        setSubmitted(false)
+        return
+      }
+      alert("신청이 완료되었습니다.")
+      setForm({ customer_name: "", customer_birth: "", mobile1: "010", mobile2: "", customer_sex: "2", region: "", interest_field: "" })
+    } catch {
+      alert("네트워크 오류가 발생했습니다.")
+    }
+    setSubmitted(false)
+  }
+
+  return (
+    <>
+      {showModal && (
+        <PrivacyModal onConfirm={handleConfirm} onClose={() => setShowModal(false)} />
+      )}
+
+      <div className="bg-white/10 backdrop-blur-md rounded-3xl p-5 shadow-2xl border border-white/20 w-full max-w-4xl mx-auto">
+        <div className="flex flex-col lg:flex-row gap-3">
+          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+            {/* 성별 + 이름 */}
+            <div className="flex bg-white rounded-full px-5 py-3.5 shadow-sm items-center gap-3 transition-shadow focus-within:ring-2 focus-within:ring-brand/30">
+              <div className="flex gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => set("customer_sex", "1")}
+                  className={`px-3 py-1.5 rounded-full text-sm font-bold transition-colors ${
+                    form.customer_sex === "1"
+                      ? "bg-brand text-white shadow-md shadow-brand/30"
+                      : "bg-stone-100 text-stone-400 hover:bg-stone-200"
+                  }`}
+                >남</button>
+                <button
+                  type="button"
+                  onClick={() => set("customer_sex", "2")}
+                  className={`px-3 py-1.5 rounded-full text-sm font-bold transition-colors ${
+                    form.customer_sex === "2"
+                      ? "bg-brand text-white shadow-md shadow-brand/30"
+                      : "bg-stone-100 text-stone-400 hover:bg-stone-200"
+                  }`}
+                >여</button>
+              </div>
+              <input
+                type="text"
+                value={form.customer_name}
+                onChange={(e) => handleNameChange(e.target.value)}
+                maxLength={8}
+                placeholder="이름"
+                className="w-full bg-transparent text-[15px] font-medium text-gray-800 placeholder-gray-400 focus:outline-none"
+              />
+            </div>
+
+            {/* 생년월일 */}
+            <div className="flex bg-white rounded-full px-5 py-3.5 shadow-sm items-center transition-shadow focus-within:ring-2 focus-within:ring-brand/30">
+              <input
+                type="text"
+                value={form.customer_birth}
+                onChange={(e) => set("customer_birth", e.target.value.replace(/\D/g, ""))}
+                maxLength={6}
+                placeholder="생년월일 (예:880808)"
+                className="w-full bg-transparent text-[15px] font-medium text-gray-800 placeholder-gray-400 focus:outline-none"
+              />
+            </div>
+
+            {/* 전화번호 */}
+            <div className="flex gap-2">
+              <div className="bg-white rounded-full pl-5 pr-8 py-3.5 shadow-sm flex items-center relative shrink-0 w-[105px] transition-shadow focus-within:ring-2 focus-within:ring-brand/30">
+                <select
+                  value={form.mobile1}
+                  onChange={(e) => set("mobile1", e.target.value)}
+                  className="w-full bg-transparent text-[15px] font-medium text-gray-800 appearance-none focus:outline-none"
+                >
+                  {["010","011","016","017","019"].map((v) => (
+                    <option key={v} value={v}>{v}</option>
+                  ))}
+                </select>
+                <div className="absolute right-4 pointer-events-none text-gray-400 text-xs">▼</div>
+              </div>
+              <div className="flex-1 bg-white rounded-full px-5 py-3.5 shadow-sm flex items-center transition-shadow focus-within:ring-2 focus-within:ring-brand/30">
+                <input
+                  type="text"
+                  value={form.mobile2}
+                  onChange={(e) => set("mobile2", e.target.value.replace(/\D/g, ""))}
+                  maxLength={form.mobile2.startsWith("01") ? 11 : 8}
+                  placeholder="'-'를 제외해주세요"
+                  className="w-full bg-transparent text-[15px] font-medium text-gray-800 placeholder-gray-400 focus:outline-none min-w-0"
+                />
+              </div>
+            </div>
+
+            {/* 거주 지역 */}
+            <div className="flex bg-white rounded-full px-5 py-3.5 shadow-sm items-center relative transition-shadow focus-within:ring-2 focus-within:ring-brand/30">
+              <select
+                value={form.region}
+                onChange={(e) => set("region", e.target.value)}
+                className={`w-full bg-transparent text-[15px] font-medium appearance-none focus:outline-none ${form.region ? 'text-gray-800' : 'text-gray-400'}`}
+              >
+                <option value="" disabled hidden>거주 지역 선택</option>
+                {["서울","부산","대구","인천","광주","대전","울산","세종","경기","강원","충북","충남","전북","전남","경북","경남","제주"].map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+              <div className="absolute right-5 pointer-events-none text-gray-400 text-xs">▼</div>
+            </div>
+
+            {/* 관심 분야 */}
+            <div className="flex bg-white rounded-full px-5 py-3.5 shadow-sm items-center relative transition-shadow focus-within:ring-2 focus-within:ring-brand/30 sm:col-span-2">
+              <select
+                value={form.interest_field}
+                onChange={(e) => set("interest_field", e.target.value)}
+                className={`w-full bg-transparent text-[15px] font-medium appearance-none focus:outline-none ${form.interest_field ? 'text-gray-800' : 'text-gray-400'}`}
+              >
+                <option value="" disabled hidden>관심 분야 선택 (헤어/피부/메이크업/네일)</option>
+                {["헤어","피부관리","메이크업","네일아트","토탈뷰티"].map((f) => (
+                  <option key={f} value={f}>{f}</option>
+                ))}
+              </select>
+              <div className="absolute right-5 pointer-events-none text-gray-400 text-xs">▼</div>
+            </div>
+
+          </div>
+
+          {/* 신청 버튼 */}
+          <div className="flex items-stretch lg:w-36 shrink-0 mt-3 lg:mt-0">
+            <button
+              type="button"
+              onClick={handleSubmitClick}
+              disabled={submitted}
+              className="w-full bg-stone-900 text-white rounded-[1.5rem] text-lg font-bold shadow-lg hover:bg-stone-800 active:scale-[0.98] transition-all duration-200 py-5 lg:py-0 disabled:opacity-50 flex lg:flex-col items-center justify-center gap-1.5 leading-none"
+            >
+              <span>상담</span>
+              <span>신청하기</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
