@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import FormSection from './test/FormSection'
 import FieldTabs from '@/components/FieldTabs'
+import RelatedSites from '@/components/RelatedSites'
 
 const faqJsonLd = {
   '@context': 'https://schema.org',
@@ -464,6 +465,9 @@ export default function Home() {
           </a>
         </div>
       </section>
+
+      {/* 관련 사이트 (내부링크) */}
+      <RelatedSites />
     </>
   )
 }
